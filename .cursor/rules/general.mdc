@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+---
+description: general code style
+globs: *.py
+alwaysApply: false
+---
+
+- Our python code should be typed, readable, maintainable, easy to test
+- not overcomplicated, not needlessly abstracted, mostly functional, although we do like the strategy pattern. 
+- don't edit files that are not explicitly references without permission
+- to execute python code use uv package manager, e.g. `uv run python main.py` `uv run pytest .`

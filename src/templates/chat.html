@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Planner Chat</title>
+    <!-- Add marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Add jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .chat-header {
+            background: #4a6fa5;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h1 {
+            margin: 0;
+            flex-grow: 1;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .message {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            position: relative;
+            max-width: 80%;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .message::before {
+            position: absolute;
+            top: -25px;
+            font-weight: 600;
+            color: #4a6fa5;
+            font-size: 14px;
+        }
+        .user-message {
+            background: #e3f2fd;
+            margin-left: auto;
+            margin-right: 20px;
+            margin-top: 30px;
+        }
+        .user-message::before {
+            content: "You";
+            right: 0;
+        }
+        .bot-message {
+            background: #f8f9fa;
+            margin-right: auto;
+            margin-left: 20px;
+            margin-top: 30px;
+        }
+        .bot-message::before {
+            content: "Trip Planner";
+            left: 0;
+        }
+        /* Markdown styling */
+        .bot-message p {
+            margin: 4px 0;
+        }
+        .bot-message h2 {
+            margin: 12px 0 6px 0;
+            color: #2c3e50;
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+        .bot-message ul {
+            margin: 4px 0;
+            padding-left: 24px;
+            list-style-type: disc;
+        }
+        .bot-message ul ul {
+            margin: 2px 0;
+            list-style-type: circle;
+        }
+        .bot-message li {
+            margin: 2px 0;
+        }
+        .bot-message li p {
+            margin: 0;
+            display: inline;
+        }
+        .bot-message strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        .bot-message pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        #message-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+        }
+        #send-button {
+            padding: 10px 20px;
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+        }
+        #send-button:hover {
+            background: #3a5a8f;
+        }
+        .typing-indicator {
+            display: none;
+            color: #666;
+            font-style: italic;
+            padding: 10px 15px;
+            flex-shrink: 0;
+        }
+        .day-schedule {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .time-period {
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .activities {
+            margin: 5px 0 15px 20px;
+        }
+        .activity {
+            margin: 5px 0;
+        }
+        h3 {
+            margin: 20px 0 10px 0;
+            color: #2c3e50;
+            font-size: 1.2em;
+        }
+        #download-btn {
+            background: white;
+            color: #4a6fa5;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        #download-btn:hover {
+            background: #e3f2fd;
+        }
+        /* Add print-specific styles */
+        @media print {
+            body {
+                margin: 20px auto;
+                padding: 20px;
+                height: auto;
+            }
+            .chat-container {
+                height: auto;
+                box-shadow: none;
+            }
+            .chat-messages {
+                overflow: visible;
+            }
+            .message {
+                break-inside: avoid;
+            }
+            .chat-input, #download-btn {
+                display: none;
+            }
+            .header {
+                text-align: center;
+                color: #4a6fa5;
+                margin-bottom: 30px;
+            }
+            .message::before {
+                top: -25px;
+                font-size: 14px;
+            }
+            .user-message {
+                margin-right: 20px;
+            }
+            .bot-message {
+                margin-left: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Trip Planner Assistant</h1>
+            <button id="download-btn" onclick="downloadPDF()">Download Chat</button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                Hello! I'm your trip planning assistant. How can I help you plan your next adventure?
+            </div>
+        </div>
+        <div class="typing-indicator" id="typing-indicator">
+            Researching...
+        </div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Type your message here..." autocomplete="off">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const typingIndicator = document.getElementById('typing-indicator');
+        
+        let ws;
+        let reconnectAttempts = 0;
+        let currentResponse = '';
+        let isStreaming = false;
+        const maxReconnectAttempts = 5;
+        const reconnectDelay = 3000;
+
+        let messageHistory = [];
+
+        // Configure marked.js options
+        marked.setOptions({
+            breaks: false,  // Disable automatic line breaks
+            gfm: true     // Enable GitHub Flavored Markdown
+        });
+
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            ws = new WebSocket(`${protocol}//${host}/ws`);
+            
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+            typingIndicator.style.display = 'none';
+
+            ws.onopen = () => {
+                console.log('Connected to WebSocket');
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                reconnectAttempts = 0;
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket connection closed');
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`);
+                    setTimeout(connect, reconnectDelay);
+                } else {
+                    addMessage('Connection lost. Please refresh the page.');
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'start') {
+                    currentResponse = '';
+                    isStreaming = true;
+                    typingIndicator.style.display = 'none';
+                    addMessage('', false);
+                } 
+                else if (data.type === 'stream') {
+                    if (isStreaming) {
+                        currentResponse = data.message;
+                        const lastMessage = messagesDiv.lastElementChild;
+                        lastMessage.innerHTML = marked.parse(currentResponse);
+                        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    }
+                }
+                else if (data.type === 'end') {
+                    isStreaming = false;
+                    typingIndicator.style.display = 'none';
+                    // Update the last message in history with complete response
+                    if (messageHistory.length > 0) {
+                        messageHistory[messageHistory.length - 1].text = currentResponse;
+                    }
+                }
+                else {
+                    typingIndicator.style.display = 'none';
+                    addMessage(data.message);
+                }
+            };
+        }
+
+        connect();
+
+        function formatMessage(text) {
+            // First, normalize line endings and ensure proper spacing
+            text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            
+            // Split into sections (acknowledgment, days, assumptions)
+            let sections = text.split(/\n\n+/);
+            
+            // Process each section
+            sections = sections.map(section => {
+                // If it's a day header
+                if (section.trim().match(/^Day \d+:/)) {
+                    const dayContent = section.split('\n');
+                    const dayHeader = dayContent.shift(); // Remove and store the day header
+                    
+                    // Process the remaining content as a nested list
+                    const listItems = dayContent.map(line => {
+                        const trimmed = line.trim();
+                        if (!trimmed) return '';
+                        
+                        // Main time period bullets (Morning/Afternoon/Evening)
+                        if (trimmed.match(/^\* (Morning|Afternoon|Evening)/)) {
+                            return `<li class="time-period">${trimmed.substring(2)}</li>`;
+                        }
+                        // Sub-activities (indented bullets)
+                        else if (trimmed.startsWith('* ')) {
+                            return `<li class="activity">${trimmed.substring(2)}</li>`;
+                        }
+                        return '';
+                    }).filter(item => item);
+
+                    // Group activities under their time periods
+                    let currentList = [];
+                    let html = `<h3>${dayHeader}</h3><ul class="day-schedule">`;
+                    
+                    listItems.forEach(item => {
+                        if (item.includes('class="time-period"')) {
+                            if (currentList.length > 0) {
+                                html += `<ul class="activities">${currentList.join('')}</ul>`;
+                                currentList = [];
+                            }
+                            html += item;
+                        } else {
+                            currentList.push(item);
+                        }
+                    });
+                    
+                    if (currentList.length > 0) {
+                        html += `<ul class="activities">${currentList.join('')}</ul>`;
+                    }
+                    
+                    html += '</ul>';
+                    return html;
+                }
+                // Regular paragraphs (acknowledgment and assumptions)
+                else {
+                    return `<p>${section.trim()}</p>`;
+                }
+            });
+
+            // Join all sections
+            text = sections.join('\n');
+
+            // Convert bold text
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            return text;
+        }
+
+        function addMessage(message, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            if (isUser) {
+                messageDiv.textContent = message;
+            } else {
+                messageDiv.innerHTML = marked.parse(message);
+            }
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Store message in history
+            messageHistory.push({
+                text: message,
+                isUser: isUser
+            });
+        }
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && ws.readyState === WebSocket.OPEN) {
+                addMessage(message, true);
+                ws.send(JSON.stringify({ message }));
+                messageInput.value = '';
+                typingIndicator.style.display = 'block';
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function downloadPDF() {
+            // Create a new window for PDF preview
+            const printWindow = window.open('', '_blank');
+            
+            // Create the styled content
+            const content = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Trip Planner Chat</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            max-width: 800px;
+                            margin: 20px auto;
+                            padding: 20px;
+                            line-height: 1.6;
+                        }
+                        .header {
+                            text-align: center;
+                            color: #4a6fa5;
+                            margin-bottom: 30px;
+                        }
+                        .message-container {
+                            position: relative;
+                            margin: 35px 0;
+                            clear: both;
+                        }
+                        .message {
+                            padding: 15px;
+                            border-radius: 8px;
+                            max-width: 80%;
+                            font-size: 16px;
+                            line-height: 1.6;
+                            color: #333;
+                            margin-left: 0;
+                        }
+                        .label {
+                            position: absolute;
+                            top: -25px;
+                            left: 0;
+                            font-weight: 600;
+                            color: #4a6fa5;
+                            font-size: 14px;
+                        }
+                        .user-container, .bot-container {
+                            width: 100%;
+                        }
+                        .user-message {
+                            background: #e3f2fd;
+                        }
+                        .bot-message {
+                            background: #f8f9fa;
+                        }
+                        h2 {
+                            color: #2c3e50;
+                            margin: 20px 0 10px;
+                            font-size: 1.4em;
+                        }
+                        ul {
+                            margin: 8px 0;
+                            padding-left: 20px;
+                            list-style-type: disc;
+                        }
+                        ul ul {
+                            margin: 4px 0;
+                            list-style-type: circle;
+                        }
+                        li {
+                            margin: 4px 0;
+                        }
+                        strong {
+                            color: #2c3e50;
+                            font-weight: 600;
+                        }
+                        p {
+                            margin: 8px 0;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Trip Planner Chat</h1>
+                        <p>Generated on ${new Date().toLocaleDateString()}</p>
+                    </div>
+                    ${messageHistory.map(msg => {
+                        if (msg.isUser) {
+                            return `
+                                <div class="message-container user-container">
+                                    <div class="label user-label">You</div>
+                                    <div class="message user-message">${msg.text}</div>
+                                </div>`;
+                        } else {
+                            const parsedContent = marked.parse(msg.text);
+                            return `
+                                <div class="message-container bot-container">
+                                    <div class="label bot-label">Trip Planner</div>
+                                    <div class="message bot-message">${parsedContent}</div>
+                                </div>`;
+                        }
+                    }).join('')}
+                </body>
+                </html>
+            `;
+            
+            printWindow.document.write(content);
+            printWindow.document.close();
+            
+            // Let the content render then print
+            setTimeout(() => {
+                printWindow.print();
+            }, 250);
+        }
+    </script>
+</body>
+</html> 
