@@ -1,6 +1,6 @@
 # Trip Planner Chat
 
-An interactive chat interface for planning trips, powered by OpenAI's GPT model. The application provides detailed travel itineraries with cost breakdowns and activity suggestions.
+An interactive chat interface for planning trips, powered by Google's Gemini model. The application provides detailed travel itineraries with cost breakdowns and activity suggestions.
 
 ## Features
 
@@ -24,9 +24,9 @@ An interactive chat interface for planning trips, powered by OpenAI's GPT model.
    pip install uv
    uv pip install -r requirements.txt
    ```
-4. Create a `.env` file in the root directory with your OpenAI API key:
+4. Create a `.env` file in the root directory with your Google API key:
    ```
-   OPENAI_API_KEY=your_api_key_here
+   GOOGLE_API_KEY=your_api_key_here
    ```
 
 ## Running the Application
@@ -49,7 +49,7 @@ The application is set up for automatic deployment to Heroku using GitHub Action
    - `HEROKU_API_KEY`: Your Heroku API key
    - `HEROKU_APP_NAME`: Your Heroku app name
    - `HEROKU_EMAIL`: Your Heroku account email
-   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `GOOGLE_API_KEY`: Your Google API key for Gemini
 
 ### Deployment Process
 
