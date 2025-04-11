@@ -40,10 +40,11 @@ The chat interface will be available at `http://localhost:8000`
 
 ## Deployment
 
-The application is set up for automatic deployment to Heroku using GitHub Actions.
+The application can be deployed to either Heroku or Render.
 
-### Prerequisites for Deployment
+### Heroku Deployment
 
+#### Prerequisites for Heroku
 1. A Heroku account
 2. The following secrets set in your GitHub repository:
    - `HEROKU_API_KEY`: Your Heroku API key
@@ -51,13 +52,24 @@ The application is set up for automatic deployment to Heroku using GitHub Action
    - `HEROKU_EMAIL`: Your Heroku account email
    - `GOOGLE_API_KEY`: Your Google API key for Gemini
 
-### Deployment Process
-
+#### Heroku Deployment Process
 1. Push your changes to the main branch
 2. GitHub Actions will automatically:
    - Run tests
    - Deploy to Heroku if tests pass
    - Configure environment variables
+
+### Render Deployment
+
+#### Prerequisites for Render
+1. A Render account
+2. Set the following environment variables in Render:
+   - `GOOGLE_API_KEY`: Your Google API key for Gemini
+
+#### Render Configuration
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `gunicorn src.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT`
+- **Python Version**: 3.11 or higher
 
 ## Project Structure
 
