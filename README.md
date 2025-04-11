@@ -64,9 +64,14 @@ The application is set up for automatic deployment to Heroku using GitHub Action
 ```
 src/
 ├── main.py           # FastAPI application
+├── orchestrator.py   # Trip planning orchestration logic
 ├── templates/
 │   └── chat.html    # Chat interface template
-└── static/          # Static assets
+└── agents/
+    ├── base_agent.py          # Base agent class
+    ├── accommodation_agent.py  # Accommodation planning agent
+    ├── transportation_agent.py # Transportation planning agent
+    └── activities_agent.py     # Activities planning agent
 ```
 
 ## Contributing
